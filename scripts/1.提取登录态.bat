@@ -6,12 +6,27 @@ cd /d "%~dp0\.."
 
 rem ---------- locate python ----------
 set PY=
-where python >nul 2>&1 && set PY=python
-if not defined PY where py >nul 2>&1 && set PY=py -3
+rem "py" launcher only exists if real Python (python.org) was installed - trust it.
+where py >nul 2>&1 && set PY=py -3
 if not defined PY (
-    echo [ERROR] Python not found.
-    echo Please install Python 3.10+ from https://www.python.org/downloads/
-    echo and tick "Add Python to PATH" during installation.
+    for /f "delims=" %%i in ('where python 2^>nul') do (
+        if not defined PY (
+            echo %%i | find /i "WindowsApps" >nul || set "PY=%%i"
+        )
+    )
+)
+if not defined PY (
+    echo [ERROR] No usable Python found. Two common causes:
+    echo.
+    echo 1. Only the Microsoft Store "python" alias exists. It opens the
+    echo    Store page - it is NOT real Python. Fix: Start menu, search
+    echo    "Manage app execution aliases", turn OFF python.exe and
+    echo    python3.exe.
+    echo 2. Python is not installed. Fix: install Python 3.10+ from
+    echo    https://www.python.org/downloads/ and TICK
+    echo    "Add python.exe to PATH" during setup.
+    echo.
+    echo Then delete the .venv folder here if it exists, and run me again.
     pause
     exit /b 1
 )
