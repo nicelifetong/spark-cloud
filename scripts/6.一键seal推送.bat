@@ -105,38 +105,48 @@ echo %REPO_URL%>.seal_repo.txt
 "%GIT%" remote add origin "%REPO_URL%"
 echo [OK] Repository configured. Saved URL to .seal_repo.txt (won't be committed).
 
-rem ---- Step 3: commit and push ----
+rem ---- Step 2.5: connection + login gate (browser pops HERE on first run) ----
 :remote
+echo.
+echo [2.5/3] Testing GitHub connection and login ...
+"%GIT%" ls-remote origin >nul 2>"%TEMP%\spark_git_err.txt"
+if not errorlevel 1 goto :remoteok
+call :diag
+set /p ANS3=Fixed? Retry connection now? [Y/n]:
+if /i "%ANS3%"=="n" goto :pushfail
+timeout /t 3 /nobreak >nul
+goto :remote
+:remoteok
+echo [OK] GitHub reachable and login accepted.
+
 echo.
 echo [3/3] Committing and pushing ...
 "%GIT%" add -A
 "%GIT%" commit -q -m "chore: seal update" 2>nul
 if "%FRESH%"=="1" (
-    "%GIT%" push -u origin main
+    "%GIT%" push -u origin main 2>"%TEMP%\spark_git_err.txt"
 ) else (
-    "%GIT%" push
+    "%GIT%" push 2>"%TEMP%\spark_git_err.txt"
     if errorlevel 1 (
         echo [*] Remote moved by Actions. Syncing and retrying ...
         "%GIT%" add -A
         "%GIT%" commit -q -m "chore: seal update" 2>nul
         "%GIT%" pull --rebase -q origin main
         call :fixrebase
-        "%GIT%" push
+        "%GIT%" push 2>"%TEMP%\spark_git_err.txt"
     )
 )
 set "TRIES=0"
 :retry
 if not errorlevel 1 goto :pushed
-echo.
-echo A browser window may have opened for GitHub login.
-echo Complete the login there, then come back to this window.
+call :diag
 set /p ANS2=Retry push now? [Y/n]: 
 if /i "%ANS2%"=="n" goto :pushfail
 set /a TRIES+=1
 if "%TRIES%"=="3" goto :pushfail
 timeout /t 3 /nobreak >nul
 call :fixrebase
-"%GIT%" push
+"%GIT%" push 2>"%TEMP%\spark_git_err.txt"
 goto :retry
 :pushed
 echo.
@@ -145,10 +155,44 @@ pause
 exit /b 0
 :pushfail
 echo.
-echo [WARN] Push still failing. Check: repo URL correct, network OK,
-echo        or push manually via GitHub Desktop.
+echo [WARN] Push still failing. Git said:
+type "%TEMP%\spark_git_err.txt" 2>nul
+echo Check: repo URL correct, network OK, or push manually via GitHub Desktop.
 pause
 exit /b 1
+
+:diag
+findstr /i "resolve connect timed refused certificate SSL" "%TEMP%\spark_git_err.txt" >nul 2>nul
+if not errorlevel 1 (
+    echo.
+    echo [NETWORK] Cannot reach github.com.
+    echo 1. Open https://github.com in your browser to test.
+    echo 2. Browser CAN open it? Your PC has a proxy, git does not use it. Run:
+    echo    "%GIT%" config --global http.proxy http://127.0.0.1:7890
+    echo    ^(port: Clash 7890, v2rayN 10808/10809 - see your proxy app^)
+    echo    To undo later: "%GIT%" config --global --unset http.proxy
+    echo 3. Browser CANNOT open it? Change network ^(phone hotspot^) and rerun.
+    goto :eof
+)
+findstr /i "Authentication Username terminal prompt" "%TEMP%\spark_git_err.txt" >nul 2>nul
+if not errorlevel 1 (
+    echo.
+    echo [LOGIN] GitHub login required. A browser window should have opened.
+    echo If nothing popped up: log in at https://github.com once, then rerun.
+    goto :eof
+)
+findstr /i "not found" "%TEMP%\spark_git_err.txt" >nul 2>nul
+if not errorlevel 1 (
+    echo.
+    echo [REPO] Repository not found - URL may be wrong:
+    "%GIT%" remote get-url origin 2>nul
+    echo Fix: delete file .seal_repo.txt, rerun, paste the correct URL.
+    goto :eof
+)
+echo.
+echo [GIT-ERR] Raw git message:
+type "%TEMP%\spark_git_err.txt" 2>nul
+goto :eof
 
 :fixrebase
 if not exist .git\rebase-merge exit /b 0
