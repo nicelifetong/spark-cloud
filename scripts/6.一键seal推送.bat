@@ -134,14 +134,15 @@ echo [4/4] Committing and pushing ...
 if "%FRESH%"=="1" (
     "%GIT%" push -u origin main 2>"%TEMP%\spark_git_err.txt"
 ) else (
-    "%GIT%" push 2>"%TEMP%\spark_git_err.txt"
+    "%GIT%" push -u origin main 2>"%TEMP%\spark_git_err.txt"
     if errorlevel 1 (
         echo [*] Remote moved by Actions. Syncing and retrying ...
         "%GIT%" add -A
         "%GIT%" commit -q -m "chore: seal update" 2>nul
-        "%GIT%" pull --rebase -q origin main
+        rem Empty remote has no main ref - pull may fail, that is fine.
+        "%GIT%" pull --rebase -q origin main 2>nul
         call :fixrebase
-        "%GIT%" push 2>"%TEMP%\spark_git_err.txt"
+        "%GIT%" push -u origin main 2>"%TEMP%\spark_git_err.txt"
     )
 )
 set "TRIES=0"
@@ -162,7 +163,7 @@ set /a TRIES+=1
 if "%TRIES%"=="3" goto :pushfail
 timeout /t 3 /nobreak >nul
 call :fixrebase
-"%GIT%" push 2>"%TEMP%\spark_git_err.txt"
+"%GIT%" push -u origin main 2>"%TEMP%\spark_git_err.txt"
 goto :retry
 :pushed
 echo.
