@@ -1,8 +1,7 @@
-# CI:每次 push 自动编译检查全部 Python 文件
+# CI:编译检查全部 Python 文件(仅手动触发,避免每次 seal 推送都跑一遍)
 name: CI
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   compile:
