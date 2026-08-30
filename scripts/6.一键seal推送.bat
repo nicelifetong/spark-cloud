@@ -163,36 +163,48 @@ exit /b 1
 
 :diag
 findstr /i "resolve connect timed refused certificate SSL" "%TEMP%\spark_git_err.txt" >nul 2>nul
-if not errorlevel 1 (
-    echo.
-    echo [NETWORK] Cannot reach github.com.
-    echo 1. Open https://github.com in your browser to test.
-    echo 2. Browser CAN open it? Your PC has a proxy, git does not use it. Run:
-    echo    "%GIT%" config --global http.proxy http://127.0.0.1:7890
-    echo    ^(port: Clash 7890, v2rayN 10808/10809 - see your proxy app^)
-    echo    To undo later: "%GIT%" config --global --unset http.proxy
-    echo 3. Browser CANNOT open it? Change network ^(phone hotspot^) and rerun.
-    goto :eof
-)
+if errorlevel 1 goto :diag_login
+echo.
+echo [NETWORK] Cannot reach github.com.
+echo 1. Open https://github.com in your browser to test.
+echo 2. Browser CAN open it? Your PC has a proxy, git does not use it. Run:
+echo    "%GIT%" config --global http.proxy http://127.0.0.1:7890
+echo    ^(port: Clash 7890, v2rayN 10808/10809 - see your proxy app^)
+echo    To undo later: "%GIT%" config --global --unset http.proxy
+echo 3. Browser CANNOT open it? Change network ^(phone hotspot^) and rerun.
+goto :eof
+:diag_login
 findstr /i "Authentication Username terminal prompt" "%TEMP%\spark_git_err.txt" >nul 2>nul
-if not errorlevel 1 (
-    echo.
-    echo [LOGIN] GitHub login required. A browser window should have opened.
-    echo If nothing popped up: log in at https://github.com once, then rerun.
-    goto :eof
-)
+if errorlevel 1 goto :diag_repo
+echo.
+echo [LOGIN] GitHub login required. A browser window should have opened.
+echo If nothing popped up: log in at https://github.com once, then rerun.
+goto :eof
+:diag_repo
 findstr /i "not found" "%TEMP%\spark_git_err.txt" >nul 2>nul
-if not errorlevel 1 (
-    echo.
-    echo [REPO] Repository not found - URL may be wrong:
-    "%GIT%" remote get-url origin 2>nul
-    echo Fix: delete file .seal_repo.txt, rerun, paste the correct URL.
-    goto :eof
-)
+if errorlevel 1 goto :diag_raw
+echo.
+echo [REPO] Repository not found. URL in use:
+"%GIT%" remote get-url origin 2>nul
+echo.
+echo Case A - URL is WRONG ^(typo / wrong name / full-width Chinese chars^):
+echo         delete file .seal_repo.txt, rerun, paste the correct URL again.
+set /p ANS4=Case B - URL is correct? Clear saved GitHub login and retry? [y/N]: 
+if /i "%ANS4%"=="y" call :clearcred
+goto :eof
+:diag_raw
 echo.
 echo [GIT-ERR] Raw git message:
 type "%TEMP%\spark_git_err.txt" 2>nul
 goto :eof
+
+:clearcred
+echo [*] Clearing saved GitHub login. On the next try a browser will open -
+echo     log in with the account that OWNS the private repo.
+(echo protocol=https
+echo host=github.com
+echo.) | "%GIT%" credential reject
+exit /b 0
 
 :fixrebase
 if not exist .git\rebase-merge exit /b 0
