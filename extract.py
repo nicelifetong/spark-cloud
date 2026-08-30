@@ -79,6 +79,12 @@ def main() -> None:
                     shutil.copy2(STATE_TARGET, ROOT_COPY)
                 except Exception:
                     pass
+                try:
+                    from keeper import runtime as _rt
+
+                    _rt.save("default", session_status="ok")
+                except Exception:
+                    pass
                 print("")
                 print("=" * 64)
                 print("  登录态提取成功!")

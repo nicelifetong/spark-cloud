@@ -527,3 +527,9 @@ def _export_state(context, account_id: str) -> None:
     import json
     write_text(path, json.dumps(state, ensure_ascii=False))
     logger.info("[%s] 登录态已写入 %s", account_id, path)
+    try:
+        from . import runtime as _rt
+
+        _rt.save(account_id, session_status="ok")
+    except Exception:  # 后台未运行时也能静默通过
+        pass

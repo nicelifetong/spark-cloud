@@ -847,7 +847,7 @@ def credential_upload(account_id: str):
     d = account_dir(aid)
     d.mkdir(parents=True, exist_ok=True)
     (d / "state.json").write_bytes(raw)
-    rt.save(aid, session_status="uploaded")
+    rt.save(aid, session_status="ok")
     logger.info("[%s] 已更新登录态 state.json(%s 字节)", aid, len(raw))
     return {"ok": True, "size": len(raw)}
 
