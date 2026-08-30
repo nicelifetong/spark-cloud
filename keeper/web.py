@@ -866,6 +866,13 @@ def credential_delete(account_id: str):
     target.unlink()
     rt.save(aid, session_status="deleted")
     logger.info("[%s] 登录态 state.json 已在网页端删除", aid)
+    try:
+        from . import notify
+        notify.send(f"续火花:账号「{aid}」登录态失效",
+                    "登录态已在网页端删除,请尽快重新扫码登录,否则到点将无法续火",
+                    event="login_expired")
+    except Exception:  # 通知失败不影响删除
+        pass
     return {"ok": True}
 
 
