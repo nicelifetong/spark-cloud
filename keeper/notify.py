@@ -5,7 +5,7 @@
   兼容 openclaw-weixin / OpenClaw-Wechat 等微信接入插件与任何接受该结构的机器人网关;
 - bark:GET https://api.day.app/<key>/<title>/<text>(url 填 key;填完整 http(s) 地址则按模板替换 {title}/{text});
 - serverchan(Server酱):GET https://sctapi.ftqq.com/<key>.send?title=&desp=;
-- wecom(企业微信群机器人):POST {url},JSON {"msgtype":"markdown","markdown":{"content":...}};url 填完整 Webhook 地址,免费,消息在企业微信/微信「企业微信通知」里收;
+- wecom(企业微信群机器人):POST {url},JSON {"msgtype":"text","text":{"content":...}}(纯文本,微信端可直接显示);url 填完整 Webhook 地址,免费,消息在企业微信/微信「企业微信通知」里收;
 - webhook:POST {url},JSON {"title","text"}。
 
 send() 永不抛异常——通知失败只记日志,绝不影响发送主流程。
@@ -113,7 +113,7 @@ def send(title: str, text: str, event: str | None = None) -> dict:
         elif channel == "wecom":
             resp = requests.post(
                 url,
-                json={"msgtype": "markdown", "markdown": {"content": f"**{title}**\n{text}"}},
+                json={"msgtype": "text", "text": {"content": f"{title}\n{text}"}},
                 timeout=10)
         else:  # webhook
             resp = requests.post(url, json={"title": title, "text": text}, timeout=10)
