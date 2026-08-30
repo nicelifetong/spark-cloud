@@ -94,11 +94,12 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 echo [2/3] Installing dependencies (first run may take a while)...
-".venv\Scripts\python.exe" -m pip install --upgrade pip -q
-".venv\Scripts\python.exe" -m pip install -r requirements.txt
+rem China mirror by default - much faster than official PyPI there.
+".venv\Scripts\python.exe" -m pip install --upgrade pip -q -i https://pypi.tuna.tsinghua.edu.cn/simple
+".venv\Scripts\python.exe" -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 if errorlevel 1 (
-    echo [INFO] Retry with China mirror...
-    ".venv\Scripts\python.exe" -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+    echo [INFO] Mirror failed, retrying with official PyPI...
+    ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 )
 
 echo [3/3] Browser: will use system Edge automatically (no download needed).
