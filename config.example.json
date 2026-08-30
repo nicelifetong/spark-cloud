@@ -1,0 +1,17 @@
+{
+  "schedule_time": "21:00",
+  "jitter_minutes": 30,
+  "gap_min": 6,
+  "gap_max": 12,
+  "max_per_run": 0,
+  "messages": [
+    "🔥 续火花",
+    "今天也要开心哦 🔥",
+    "晚上好 🔥"
+  ],
+  "auto_enabled": true,
+  "allow_first": false,
+  "first_limit": 1,
+  "harvest_day": "mon",
+  "max_scrolls": 80
+}

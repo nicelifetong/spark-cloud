@@ -1,0 +1,19 @@
+# 敏感/本地数据:绝不进仓库
+data/
+.env
+*.log
+
+# 运行环境
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# 本机测试/临时产物
+_smoke/
+.dsh-handoff/
+
+# IDE/系统
+.vscode/
+.idea/
+Thumbs.db

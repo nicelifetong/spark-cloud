@@ -1,0 +1,55 @@
+# 云端每日续火花:不买服务器,用 GitHub Actions 免费定时执行
+# 首次使用:
+#   1. 本地运行 python extract.py 扫码, 得到 data/accounts/default/state.json
+#   2. 在仓库 Settings → Secrets and variables → Actions 添加:
+#      - Secret  DCS_STATE_B64    = state.json 的 Base64 (PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes('data\accounts\default\state.json')))
+#   3. 在 Variables 添加(可选):
+#      - DCS_FRIENDS     = 好友昵称,英文逗号分隔(留空则自动勾选带火花好友)
+#      - DCS_MESSAGES    = 文案池,用 | 分隔,如 "🔥 续火花|今天也要开心哦"
+#      - DCS_ACCOUNT_ID  = 账号 ID,默认 default
+#      - DCS_DRY_RUN     = true 则只演练不真实发送
+# 说明:免费 Runner 为临时机器,登录态需通过 Secret 注入;如触发风控,建议改用 VPS 部署。
+
+name: Daily Cloud Streak
+
+on:
+  schedule:
+    # UTC 13:00 = 北京时间 21:00(可自行调整 cron)
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+
+jobs:
+  streak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency: daily-streak
+    env:
+      STATE_B64: ${{ secrets.DCS_STATE_B64 }}
+      FRIENDS: ${{ vars.DCS_FRIENDS }}
+      MESSAGES: ${{ vars.DCS_MESSAGES }}
+      ACCOUNT: ${{ vars.DCS_ACCOUNT_ID }}
+      DRY: ${{ vars.DCS_DRY_RUN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run daily streak
+        run: |
+          ARGS=""
+          if [ -n "$STATE_B64" ]; then ARGS="$ARGS --state-b64 $STATE_B64"; fi
+          if [ -n "$ACCOUNT" ]; then ARGS="$ARGS --account $ACCOUNT"; fi
+          if [ -n "$FRIENDS" ]; then ARGS="$ARGS --friends $FRIENDS"; fi
+          if [ -n "$MESSAGES" ]; then ARGS="$ARGS --messages $MESSAGES"; fi
+          if [ "$DRY" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          echo ">>> 执行参数: $ARGS"
+          python cli.py run $ARGS

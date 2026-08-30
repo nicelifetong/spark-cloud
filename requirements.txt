@@ -1,0 +1,15 @@
+# Spark Cloud 依赖(均为下限约束)
+flask>=3.0
+playwright>=1.49
+playwright-stealth>=1.0.6
+requests>=2.32
+paramiko>=3.5
+# 登录二维码解码(cv2;headless 免 GUI 依赖,适配 Docker)
+opencv-python-headless>=4.9
+# 二维码解码首选(zbar 引擎,对真实小码宽容;Linux 需系统库 libzbar0,Dockerfile 已装)
+pyzbar>=0.1.9
+pillow>=10.0
+# iLink 微信登录二维码 SVG 生成
+qrcode>=7.4
+# GitHub Actions 无服务器部署:vault 加密(scripts/gh_run.py)
+cryptography>=42

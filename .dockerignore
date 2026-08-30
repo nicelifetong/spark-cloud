@@ -1,0 +1,10 @@
+data/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.log
+.git/
+.gitignore
+.env
+_smoke/

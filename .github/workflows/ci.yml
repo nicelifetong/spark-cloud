@@ -1,0 +1,18 @@
+# CI:每次 push 自动编译检查全部 Python 文件
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 编译检查(keeper + app)
+        run: |
+          python -m py_compile app.py keeper/*.py
+          echo "✅ 全部编译通过"

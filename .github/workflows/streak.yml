@@ -1,0 +1,65 @@
+# 无服务器部署:续火本体跑在 GitHub Actions 上
+# 每 30 分钟一拍(国外 runner 的 cron 有 5~20 分钟随机延迟,属正常):
+#   解密 vault -> 到点账号各跑一轮(台账同日去重) -> 回写加密并提交
+#
+# 开通步骤(一次性):
+#   1. 本机:网页端登录好账号后,DATA_KEY=你的口令 python scripts/gh_run.py seal
+#   2. 提交并推送 vault/data.enc(仓库必须 Private)
+#   3. 仓库 Settings -> Secrets -> Actions 添加 DATA_KEY(与第 1 步口令一致)
+#   4. 本 workflow 每 30 分钟自动跑;也可在 Actions 页手动 Run workflow 测试
+#
+# 说明:
+#   - Cookie 失效会收到 login_expired 推送 -> 本机重登 -> seal -> push 即恢复
+#   - 微信推送(send_ok/send_fail)可用;微信指令菜单不可用(无常驻监听)
+#   - 长期无提交 Actions 会休眠:本任务每天回写提交,天然不会休眠
+name: streak
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: streak
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: 安装依赖 + Chromium
+        run: |
+          pip install -r requirements.txt cryptography
+          playwright install --with-deps chromium
+
+      - name: 执行续火(到点账号)
+        env:
+          DATA_KEY: ${{ secrets.DATA_KEY }}
+        run: python scripts/gh_run.py run
+
+      - name: 回写加密数据
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- vault/; then
+            echo "数据无变化,跳过提交"
+          else
+            for i in 1 2 3; do
+              git add vault/
+              git commit -m "chore(vault): 续火回写 $(date -u +%FT%TZ)" || exit 0
+              git pull --rebase -q origin ${GITHUB_REF_NAME} && git push -q origin ${GITHUB_REF_NAME} && { echo "已回写"; exit 0; }
+              sleep $((i * 5))
+            done
+            echo "[x] 回写推送失败"; exit 1
+          fi

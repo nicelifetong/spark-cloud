@@ -1,0 +1,32 @@
+# 自动发布:手动触发(或改 on 段为 push tags)→ SSH 到面板机重建容器。
+#
+# 前提(一次性):
+#   1. 面板机(Docker 那台)上 git clone 本仓库到固定目录,比如 /opt/spark-cloud
+#   2. GitHub 仓库 Settings → Secrets and variables → Actions 添加:
+#        DEPLOY_SSH_HOST     面板机 IP(如 192.168.5.x;公网则填公网地址/做内网穿透)
+#        DEPLOY_SSH_USER     SSH 用户
+#        DEPLOY_SSH_PASSWORD SSH 密码(或改用私钥,见 ssh-action 文档)
+#        DEPLOY_PATH         服务器上仓库路径(如 /opt/spark-cloud)
+#
+# 注意:GitHub 的 runner 在国外,要能 SSH 到你家机器需要内网穿透(frp/tailscale);
+# 只在内网用的话,手动构建仍是 5.一键部署到服务器.bat / 服务器上 compose build。
+name: Deploy
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH 到服务器拉代码并重建容器
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          password: ${{ secrets.DEPLOY_SSH_PASSWORD }}
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"
+            git pull --ff-only
+            docker compose up -d --build
+            docker compose ps

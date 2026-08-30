@@ -1,0 +1,35 @@
+# Spark Cloud · Docker 部署(本地构建,一个文件搞定)
+# ─────────────────────────────────────────────────────────────
+# 用法:项目目录里执行   docker compose up -d --build
+# 更新:拉到新代码后再执行一次同样的命令(数据在 data/ 卷,升级不丢)
+#
+# 自定义:在项目目录放 .env 文件(可选):
+#   SPARK_WEB_PORT=9000          # 网页端口(默认 8000)
+#   SPARK_TOKEN=你的令牌          # 网页访问令牌
+# ─────────────────────────────────────────────────────────────
+
+services:
+  spark-cloud:
+    build:
+      context: .
+      args:
+        APT_MIRROR: ${APT_MIRROR:-mirrors.aliyun.com}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://mirrors.aliyun.com/pypi/simple/}
+    image: spark-cloud:local
+    container_name: spark-cloud
+    restart: always
+    ports:
+      - "${SPARK_WEB_PORT:-8000}:8000"
+    environment:
+      - SPARK_PORT=8000
+      - SPARK_HOST=0.0.0.0
+      - SPARK_TOKEN=${SPARK_TOKEN:-spark_secret_token_change_me}
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./data:/app/data         # 登录态/好友台账/微信绑定,升级不丢
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5).status == 200 else 1)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
