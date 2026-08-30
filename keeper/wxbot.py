@@ -265,6 +265,10 @@ class WxBot:
                     self.phase = "expired"
                     self.last_error = "登录已过期,请重新扫码"
                 return False, "登录已过期,请重新扫码"
+            if "ret=-2" in msg or "prepare failed" in msg:
+                return False, ("推送会话已过期(context_token 有时效):"
+                               "在微信里给机器人发一条消息刷新,然后重新 seal;"
+                               "云端无人值守场景建议改用 bark/serverchan/webhook 渠道")
             return False, msg
 
     # ---------- 内部流程 ----------

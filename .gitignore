@@ -2,6 +2,8 @@
 data/
 .env
 *.log
+.seal_key
+.seal_repo.txt
 
 # 运行环境
 .venv/

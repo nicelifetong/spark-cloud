@@ -153,7 +153,7 @@ docker compose up -d --build
 ### 开通步骤(一次性)
 
 1. **本地配置好一切**:先按路线 B 启动本地后台 → 扫码登录抖音 → 同步勾选好友 → 设置发送时间(「定时」页,每个账号可不同)→ 配好通知渠道;
-2. **打包加密数据**:项目目录打开 PowerShell:
+2. **打包加密数据**:双击 **`scripts\6.一键seal推送.bat`** 一键搞定——输入口令 → 自动 seal → 没装 git 会自动用 winget 装好 → 首次推送时弹浏览器登录 GitHub 授权一次 → 以后每次双击全自动。习惯命令行的话也可以手动:
    ~~~powershell
    $env:DATA_KEY = '自定义一个口令'          # 记牢,恢复数据也要用它
    .venv\Scripts\python.exe scripts\gh_run.py seal   # 生成 vault\data.enc
@@ -208,8 +208,8 @@ docker compose up -d --build
 2. 点 **「生成二维码」** → **微信扫一扫** → 手机上点确认;
 3. ⚠️ **关键一步**:在微信里给这个机器人**随便发一条消息**(如"1")——微信规定机器人只能推给"先发过消息"的用户,不发这条收不到推送;
 4. 点 **「测试推送」**,微信收到即绑定成功;
-5. **路线 A/B/C**:到这里就完了,配置存在服务器上直接生效;
-   **路线 D**:再执行一次 `seal` 并 push,让凭据进仓库,云端就能用。
+5. **路线 A/B/C**:到这里就完了,配置存在服务器上直接生效,机器人在线能自动刷新会话;
+   **路线 D(GitHub Actions)**:⚠️ **别选微信直连,选 Bark / Server酱 / Webhook**。微信直连的推送会话有时效,本地机器人不在线就没人刷新它,GitHub 那边隔天再发就会报 `ret=-2 prepare failed`。用 Bark/iOS、Server酱/微信服务号或自定义 webhook,纯 HTTP 无凭据,云端永久可用;
 
 > 绑定凭据存在 `data\wx_state.json`(已随 data 目录被 gitignore 保护,不会裸传 GitHub)。
 
@@ -276,7 +276,7 @@ docker compose up -d --build
 | 文件/目录 | 作用 |
 |---|---|
 | `Dockerfile` / `docker-compose.yml` | Compose 部署(路线 A,`docker compose up -d --build` 自动使用) |
-| `scripts\` | Windows 一键脚本(1 提取登录态 / 2 立即运行 / 3 管理后台 / 4 同步到服务器 / 5 一键部署) |
+| `scripts\` | Windows 一键脚本(1 提取登录态 / 2 立即运行 / 3 管理后台 / 4 同步到服务器 / 5 一键部署 / 6 一键 seal 推送,走路线 D 必用) |
 | `deploy\` | Linux 部署脚本、开机自启服务、nginx 示例 |
 | `keeper\` | 程序核心(自动化、扫码、调度、台账) |
 | `static\` | 网页界面(液态玻璃风格) |
