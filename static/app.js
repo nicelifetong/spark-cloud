@@ -1257,7 +1257,7 @@ function renderCredentials() {
     var up = el('div', 'glass');
     up.style.cssText = 'padding:22px';
     up.innerHTML =
-      '<div class="section-head"><h3>上传登录态</h3><span class="spacer"></span>' + (st.state_file_exists ? '<span class="tag ok">✓ 已就绪</span>' : '<span class="tag err">✗ 缺失</span>') + '</div>' +
+      '<div class="section-head"><h3>上传登录态</h3><span class="spacer"></span>' + (st.state_file_exists ? '<span class="tag ok">✓ 已就绪</span> <button class="btn btn-ghost" id="credDelete" style="padding:4px 10px;font-size:12px">删除登录态</button>' : '<span class="tag err">✗ 缺失</span>') + '</div>' +
       '<div class="drop-zone" id="dropZone">' + ICONS.upload + '<div>点击选择或拖入 <span class="mono">state.json</span></div>' +
       '<div style="font-size:11.5px;color:var(--text-3);margin-top:4px">由「1.本地提取通行证.bat」或 extract_cookie.py 生成</div></div>' +
       '<input type="file" id="stateFile" accept=".json" style="display:none" />' +
@@ -1290,6 +1290,15 @@ function renderCredentials() {
       if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
     });
     $('#qrStart').onclick = startLogin;
+    var cd = $('#credDelete');
+    if (cd) cd.onclick = function () {
+      confirmDlg('删除登录态', '将删除该账号的 <span class="mono">state.json</span>。删除后:<br/>· 下次运行会失败,并触发<b style="color:var(--err)">登录态失效微信推送</b>;<br/>· 需重新上传文件或扫码登录。确定删除?', function () {
+        del(accPath('/credential')).then(function () {
+          toast('登录态已删除', 'ok');
+          renderCredentials();
+        }).catch(function (e) { toast(e.message, 'err'); });
+      }, '删除');
+    };
     function uploadFile(f) {
       var fd = new FormData();
       fd.append('file', f);

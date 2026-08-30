@@ -852,6 +852,23 @@ def credential_upload(account_id: str):
     return {"ok": True, "size": len(raw)}
 
 
+@api.delete("/accounts/<account_id>/credential")
+def credential_delete(account_id: str):
+    denied = _require_auth()
+    if denied:
+        return denied
+    aid, err = _resolve(account_id)
+    if err:
+        return err
+    target = account_dir(aid) / "state.json"
+    if not target.exists():
+        return jsonify({"detail": "该账号本来就没有登录态"}), 404
+    target.unlink()
+    rt.save(aid, session_status="deleted")
+    logger.info("[%s] 登录态 state.json 已在网页端删除", aid)
+    return {"ok": True}
+
+
 @api.post("/accounts/<account_id>/qr")
 def qr_start(account_id: str):
     denied = _require_auth()

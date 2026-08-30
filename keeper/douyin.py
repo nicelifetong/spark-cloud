@@ -450,6 +450,7 @@ def run_send_page(account_id: str, targets: list[dict], dry_run: bool,
     result: dict = {"ok": [], "failed": [], "skipped": [], "logged_out": False, "rate_limited": False}
     state = account_dir(account_id) / "state.json"
     if not state.exists():
+        result["logged_out"] = True  # 与过期同路径:触发登录态失效微信推送
         result["failed"].append({"name": "_system", "reason": "该账号尚未上传登录态 state.json"})
         return result
     try:
