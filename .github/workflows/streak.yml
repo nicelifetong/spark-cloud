@@ -21,7 +21,7 @@ on:
 
 concurrency:
   group: streak
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: write
