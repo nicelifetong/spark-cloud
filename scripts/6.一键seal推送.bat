@@ -120,6 +120,7 @@ if "%FRESH%"=="1" (
         "%GIT%" add -A
         "%GIT%" commit -q -m "chore: seal update" 2>nul
         "%GIT%" pull --rebase -q origin main
+        call :fixrebase
         "%GIT%" push
     )
 )
@@ -133,6 +134,8 @@ set /p ANS2=Retry push now? [Y/n]:
 if /i "%ANS2%"=="n" goto :pushfail
 set /a TRIES+=1
 if "%TRIES%"=="3" goto :pushfail
+timeout /t 3 /nobreak >nul
+call :fixrebase
 "%GIT%" push
 goto :retry
 :pushed
@@ -146,6 +149,14 @@ echo [WARN] Push still failing. Check: repo URL correct, network OK,
 echo        or push manually via GitHub Desktop.
 pause
 exit /b 1
+
+:fixrebase
+if not exist .git\rebase-merge exit /b 0
+echo [*] Vault conflict - keeping the newest local seal ...
+"%GIT%" checkout --theirs vault\data.enc 2>nul
+"%GIT%" add vault\data.enc
+"%GIT%" -c core.editor=true rebase --continue
+exit /b 0
 
 :desktop
 echo   1. Open GitHub Desktop
