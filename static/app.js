@@ -1462,7 +1462,7 @@ function appendNotifyCard(container) {
     var n = r.notify;
     var card = el('div', 'glass');
     card.style.cssText = 'padding:20px;margin-top:16px';
-    var chOpts = [['wx_direct', '微信直连(扫码绑定,推荐)'], ['clawbot', 'Clawbot / OpenClaw 网关(微信)'], ['bark', 'Bark(iOS)'], ['serverchan', 'Server酱'], ['webhook', '自定义 Webhook']];
+    var chOpts = [['wx_direct', '微信直连(扫码绑定,推荐)'], ['clawbot', 'Clawbot / OpenClaw 网关(微信)'], ['wecom', '企业微信群机器人(免费)'], ['bark', 'Bark(iOS)'], ['serverchan', 'Server酱'], ['webhook', '自定义 Webhook']];
     var opts = chOpts.map(function (o) {
       return '<option value="' + o[0] + '"' + (n.channel === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
     }).join('');
@@ -1472,7 +1472,7 @@ function appendNotifyCard(container) {
       '<div class="ntf-hint">开启后:好友发送失败 / 登录态失效 / 触发限流 时,自动推送到微信等渠道。</div>' +
       '<div class="field-row"><label>渠道</label><select class="input" id="ntfCh">' + opts + '</select></div>' +
       '<div class="ntf-hint" id="ntfClawHint" style="display:none">微信登录由 OpenClaw 网关负责:在网关所在机器执行 <span class="mono">openclaw channels login --channel openclaw-weixin</span>,用手机微信扫码确认即可;本工具只负责把通知投递给网关,把发送接口 URL / 令牌填到下面。</div>' +
-      '<div class="field-row"><label>地址 / Key</label><input class="input" id="ntfUrl" placeholder="clawbot=网关发送接口完整 URL;bark=Key;Server酱=SendKey" value="' + esc(n.url || '') + '" /></div>' +
+      '<div class="field-row"><label>地址 / Key</label><input class="input" id="ntfUrl" placeholder="wecom=企业微信机器人 Webhook 完整地址;bark=Key;Server酱=SendKey" value="' + esc(n.url || '') + '" /></div>' +
       '<div class="field-row"><label>网关令牌</label><input class="input" id="ntfToken" placeholder="Clawbot 网关 API Token(可选)" value="' + esc(n.token || '') + '" /></div>' +
       '<div class="field-row"><label>接收目标</label><input class="input" id="ntfTo" placeholder="微信联系人 / 群 id(可选,如 filehelper)" value="' + esc(n.to || '') + '" /></div>' +
       '<div class="ntf-evs" id="ntfEvs"></div>' +

@@ -135,6 +135,15 @@ def run(dry: bool = False) -> int:
                 marker.write_text(today, encoding="utf-8")
         except Exception as e:
             print(f"[err] {aid}: {e}(下个拍子重试)")
+            alert = DATA / "accounts" / aid / ".cloud_alert"
+            if not (alert.exists() and alert.read_text(encoding="utf-8", errors="ignore").strip() == today):
+                try:
+                    from keeper import notify
+                    notify.send(f"续火花:云端执行异常「{aid}」", f"{e}(下个拍子自动重试)")
+                    alert.parent.mkdir(parents=True, exist_ok=True)
+                    alert.write_text(today, encoding="utf-8")
+                except Exception:
+                    pass
 
     if act == 0:
         print("[tick] 本轮无账号需要执行")

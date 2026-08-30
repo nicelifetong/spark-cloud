@@ -215,7 +215,7 @@ docker compose up -d --build
 3. ⚠️ **关键一步**:在微信里给这个机器人**随便发一条消息**(如"1")——微信规定机器人只能推给"先发过消息"的用户,不发这条收不到推送;
 4. 点 **「测试推送」**,微信收到即绑定成功;
 5. **路线 A/B/C**:到这里就完了,配置存在服务器上直接生效,机器人在线能自动刷新会话;
-   **路线 D(GitHub Actions)**:⚠️ **别选微信直连,选 Bark / Server酱 / Webhook**。微信直连的推送会话有时效,本地机器人不在线就没人刷新它,GitHub 那边隔天再发就会报 `ret=-2 prepare failed`。用 Bark/iOS、Server酱/微信服务号或自定义 webhook,纯 HTTP 无凭据,云端永久可用;
+   **路线 D(GitHub Actions)**:⚠️ **别选微信直连,选 企业微信 / Bark / Server酱 / Webhook**。微信直连的推送会话有时效,本地机器人不在线就没人刷新它,GitHub 那边隔天再发就会报 `ret=-2 prepare failed`。推荐**企业微信群机器人(免费)**:手机装企业微信 App → 随便建一个群(只有自己也行)→ 群设置 → **群机器人** → 添加 → 复制 **Webhook 地址** → 网页「设置 → 通知渠道」选 **「企业微信群机器人(免费)」** 粘贴地址 → 「测试推送」;消息在企业微信 App 或微信「企业微信通知」里收。Bark/iOS、Server酱/微信服务号或自定义 webhook 也行,纯 HTTP 无凭据,云端永久可用(配置存在 `data\notify.json`,6 号 seal 上云后云端同样生效,无需再配 GitHub Secrets);
 
 > 绑定凭据存在 `data\wx_state.json`(已随 data 目录被 gitignore 保护,不会裸传 GitHub)。
 

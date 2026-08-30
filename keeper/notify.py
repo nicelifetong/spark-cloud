@@ -5,6 +5,7 @@
   兼容 openclaw-weixin / OpenClaw-Wechat 等微信接入插件与任何接受该结构的机器人网关;
 - bark:GET https://api.day.app/<key>/<title>/<text>(url 填 key;填完整 http(s) 地址则按模板替换 {title}/{text});
 - serverchan(Server酱):GET https://sctapi.ftqq.com/<key>.send?title=&desp=;
+- wecom(企业微信群机器人):POST {url},JSON {"msgtype":"markdown","markdown":{"content":...}};url 填完整 Webhook 地址,免费,消息在企业微信/微信「企业微信通知」里收;
 - webhook:POST {url},JSON {"title","text"}。
 
 send() 永不抛异常——通知失败只记日志,绝不影响发送主流程。
@@ -21,7 +22,7 @@ from .storage import read_json, write_json
 
 logger = logging.getLogger("spark")
 
-CHANNELS = ("clawbot", "wx_direct", "bark", "serverchan", "webhook")
+CHANNELS = ("clawbot", "wx_direct", "bark", "serverchan", "wecom", "webhook")
 
 _DEFAULT: dict = {
     "enabled": False,
@@ -109,9 +110,19 @@ def send(title: str, text: str, event: str | None = None) -> dict:
             resp = requests.get(
                 f"https://sctapi.ftqq.com/{url}.send",
                 params={"title": title, "desp": text}, timeout=10)
+        elif channel == "wecom":
+            resp = requests.post(
+                url,
+                json={"msgtype": "markdown", "markdown": {"content": f"**{title}**\n{text}"}},
+                timeout=10)
         else:  # webhook
             resp = requests.post(url, json={"title": title, "text": text}, timeout=10)
         ok = 200 <= resp.status_code < 300
+        if ok and channel == "wecom":
+            try:
+                ok = resp.json().get("errcode") == 0  # 企业微信:HTTP 200 + errcode 0 才算成功
+            except Exception:
+                ok = False
         logger.info("[notify] %s 推送%s(%s)", channel, "成功" if ok else f"失败 HTTP {resp.status_code}", event or "test")
         return {"ok": ok, "status": resp.status_code}
     except Exception as exc:  # noqa: BLE001
