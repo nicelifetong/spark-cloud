@@ -1,6 +1,8 @@
 @echo off
 setlocal
 set "PYTHONUNBUFFERED=1"
+rem If a Chromium download is ever needed, pull it from the China mirror.
+set "PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright"
 title Spark Cloud - Extract Login State
 cd /d "%~dp0\.."
 
