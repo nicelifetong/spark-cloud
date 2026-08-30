@@ -153,12 +153,18 @@ docker compose up -d --build
 ### 开通步骤(一次性)
 
 1. **本地配置好一切**:先按路线 B 启动本地后台 → 扫码登录抖音 → 同步勾选好友 → 设置发送时间(「定时」页,每个账号可不同)→ 配好通知渠道;
-2. **打包加密数据**:双击 **`scripts\6.一键seal推送.bat`** 一键搞定——输入口令 → 自动 seal → 没装 git 会自动用 winget 装好 → 首次推送时弹浏览器登录 GitHub 授权一次 → 以后每次双击全自动。习惯命令行的话也可以手动:
+2. **一键上云**:双击 **`scripts\6.一键seal推送.bat`**,之后全程自动:
+   - 自动读取(或问你一次)口令 → 自动 seal 加密数据;
+   - 没装 git / GitHub CLI 会自动用 winget 装好;
+   - **弹浏览器登录 GitHub**(黑窗口让你按回车 → 浏览器打开 GitHub,输入它显示的一次性代码)——这就是唯一的"登录界面";
+   - **自动在你的账号下新建私有仓库 `spark-cloud`**(已存在就直接复用),并自动把口令写进仓库 Secrets(`DATA_KEY`)、启用 Actions;
+   - 推送完成。以后每次双击全自动、零输入。
+   习惯命令行的话也可以手动 seal:
    ~~~powershell
    $env:DATA_KEY = '自定义一个口令'          # 记牢,恢复数据也要用它
    .venv\Scripts\python.exe scripts\gh_run.py seal   # 生成 vault\data.enc
    ~~~
-3. **推到 GitHub 私有仓库**(必须 Private!)——没装过 Git 的看这里:
+3. **(可选)手动方式**:6 号脚本已自动完成"建仓库 + 推代码 + 配密钥",想手动折腾才看下面——**推到 GitHub 私有仓库**(必须 Private!)没装过 Git 的看这里:
 
    <details>
    <summary><b>📖 手把手:安装 Git 并上传项目(点开)</b></summary>
@@ -175,8 +181,8 @@ docker compose up -d --build
    </details>
 
    上传完成后打开仓库页面确认代码都在(⚠️ **确认是 Private 标记**);
-4. **配密钥**:仓库 Settings → Secrets and variables → Actions → New repository secret,Name 填 `DATA_KEY`,Value 填第 2 步的口令;
-5. 到 **Actions → streak → Run workflow** 手动跑一次验证,之后全自动。
+   - **配密钥**(脚本没配成时手动加):仓库 Settings → Secrets and variables → Actions → New repository secret,Name 填 `DATA_KEY`,Value 填第 2 步的口令;
+4. 到 **Actions → streak → Run workflow** 手动跑一次验证,之后全自动。
 
 ### 它是怎么跑的
 
