@@ -758,7 +758,7 @@ function renderFriends() {
     var fs = $('#friendSearch');
     if (fs) fs.oninput = function () { renderFriends(); };
     every('friends', 9000, function () {
-      get(accPath('/contacts')).then(function (r) {
+      get(accPath('/friends')).then(function (r) {
         if (!dataChanged('fr:' + state.accountId, r)) return;
         $('#page').classList.add('poll');
         renderFriends();
