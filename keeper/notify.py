@@ -111,10 +111,29 @@ def send(title: str, text: str, event: str | None = None) -> dict:
                 f"https://sctapi.ftqq.com/{url}.send",
                 params={"title": title, "desp": text}, timeout=10)
         elif channel == "wecom":
-            resp = requests.post(
-                url,
-                json={"msgtype": "markdown", "markdown": {"content": f"**{title}**\n{text}"}},
-                timeout=10)
+            if url.startswith("http"):
+                # 群机器人 webhook:POST markdown
+                resp = requests.post(
+                    url,
+                    json={"msgtype": "markdown", "markdown": {"content": f"**{title}**\n{text}"}},
+                    timeout=10)
+            else:
+                # 自建应用:corpid|agentid|secret -> gettoken -> message/send @all
+                parts = [p.strip() for p in url.split("|")]
+                if len(parts) != 3 or not all(parts):
+                    raise ValueError("wecom 配置应为 Webhook 地址,或 企业ID|AgentId|Secret(竖线分隔)")
+                corpid, agentid, secret = parts
+                tok = requests.get(
+                    "https://qyapi.weixin.qq.com/cgi-bin/gettoken",
+                    params={"corpid": corpid, "corpsecret": secret}, timeout=10).json().get("access_token")
+                if not tok:
+                    raise ValueError("获取 access_token 失败:检查企业ID与 Secret")
+                resp = requests.post(
+                    "https://qyapi.weixin.qq.com/cgi-bin/message/send",
+                    params={"access_token": tok},
+                    json={"touser": "@all", "msgtype": "text",
+                          "agentid": int(agentid), "text": {"content": f"{title}\n{text}"}},
+                    timeout=10)
         else:  # webhook
             resp = requests.post(url, json={"title": title, "text": text}, timeout=10)
         ok = 200 <= resp.status_code < 300
