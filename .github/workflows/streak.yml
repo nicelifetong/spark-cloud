@@ -1,6 +1,6 @@
 # 无服务器部署:续火本体跑在 GitHub Actions 上
 # 每 30 分钟一拍(国外 runner 的 cron 有 5~20 分钟随机延迟,属正常):
-#   解密 vault -> 到点账号各跑一轮(台账同日去重) -> 回写加密并提交
+#   解密 vault -> 到点账号各跑一轮(同日每账号只执行一次) -> 回写加密并提交
 #
 # 开通步骤(一次性):
 #   1. 本机:网页端登录好账号后,DATA_KEY=你的口令 python scripts/gh_run.py seal
@@ -30,6 +30,8 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      TZ: Asia/Shanghai
     steps:
       - uses: actions/checkout@v4
 

@@ -99,7 +99,7 @@ def run(dry: bool = False) -> int:
 
     now = datetime.now(BJ)
     now_hm = (now.hour, now.minute)
-    print(f"[tick] 北京时间 {now:%Y-%m-%d %H:%M}(仅执行已到点的账号;台账自动去重,同日不重发)")
+    print(f"[tick] 北京时间 {now:%Y-%m-%d %H:%M}(同日每账号最多执行一次)")
 
     act = 0
     for acc in accounts.list_accounts():
@@ -118,6 +118,11 @@ def run(dry: bool = False) -> int:
         if now_hm < (h, m):
             print(f"[skip] {aid}: 计划 {h:02d}:{m:02d} 未到")
             continue
+        marker = DATA / "accounts" / aid / ".cloud_done"
+        today = now.date().isoformat()
+        if marker.exists() and marker.read_text(encoding="utf-8", errors="ignore").strip() == today:
+            print(f"[skip] {aid}: 今天({today})已执行过,同日不重发")
+            continue
         print(f"[run] {aid}(计划 {h:02d}:{m:02d})开始…")
         try:
             result = runner.run_once(aid, dry=dry)
@@ -125,8 +130,11 @@ def run(dry: bool = False) -> int:
             note = result.get("note") or ""
             print(f"[done] {aid}: 成功 {ok} 失败 {bad} {note}")
             act += 1
+            if not dry:
+                marker.parent.mkdir(parents=True, exist_ok=True)
+                marker.write_text(today, encoding="utf-8")
         except Exception as e:
-            print(f"[err] {aid}: {e}")
+            print(f"[err] {aid}: {e}(下个拍子重试)")
 
     if act == 0:
         print("[tick] 本轮无账号需要执行")
