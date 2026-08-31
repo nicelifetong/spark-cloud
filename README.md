@@ -254,13 +254,18 @@ docker compose up -d --build
 全程只用一部手机:装 Termux → 复制 3 条命令 → 扫码 → 完事。之后 GitHub Actions 云端自动跑,手机都不用开机。
 
 1. 安装 **Termux**:从 [F-Droid](https://f-droid.org/packages/com.termux/) 或其 GitHub Releases 下载(应用商店的旧版别用)
-2. 打开 Termux,原样粘贴运行:
+2. 打开 Termux,先弄出管理后台(原样粘贴):
    ```bash
-   pkg update -y && pkg install -y git
+   pkg update -y && pkg install -y git python
    git clone https://github.com/nicelifetong/spark-cloud.git
-   cd spark-cloud && bash deploy.sh
+   cd spark-cloud && pip install -r requirements.txt && python app.py
    ```
-3. 按屏幕提示走:**先扫码登录,并在后台里把好友/时间/推送全部配好** → 配完按回车,脚本自动建**私有仓库**、加密封包、上传 GitHub、写入 Secret → ✅ 完成
+   浏览器打开屏幕上的地址 → 扫码登录 → 定时页选好友/设时间 → 设置→通知设置绑定企业微信
+3. **后台里全部配置好**后,按 Ctrl+C 退出,再输一条命令上传 GitHub:
+   ```bash
+   bash deploy.sh
+   ```
+   自动完成:登录 GitHub → 建**私有仓库** → 加密封包 → 推送 → 写入 Secret → ✅ 完成
 
 想换个仓库名再部署一次:`bash deploy.sh 你要的仓库名`。
 > 提示:扫码那一步,Termux 会启动凭证页并把地址打在屏幕上,用手机浏览器打开它 → 「凭证页」→ 抖音 App 扫码即可。
