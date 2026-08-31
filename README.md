@@ -277,6 +277,8 @@ docker compose up -d --build
 3. 云端会自动开浏览器,把登录二维码**发到你的企业微信群** → 用抖音 App 扫群里的码
 4. 扫完 workflow 自动把登录态加密回传仓库 ✅ 全程只用手机
 
+**更简单的:粘贴 Cookie(推荐)**:凭证页展开「扫不了码?粘贴 Cookie 登录」→ 用 Via/夸克等浏览器开 `www.douyin.com`(菜单切桌面版 UA)登录 → 按页面提示复制 Cookie → 粘贴提交即完成登录,不用扫码、不用云端。
+
 ### 调时间 / 选好友(手机上)
 
 1. Termux 里跑 `python app.py`,浏览器打开它打印的地址(带 token)
