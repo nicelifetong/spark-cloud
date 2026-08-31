@@ -12,7 +12,12 @@ import threading
 from contextlib import contextmanager
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+try:
+    from playwright.sync_api import sync_playwright
+    HAS_PLAYWRIGHT = True
+except ImportError:  # Termux/手机:管理后台可启动,消息发送由云端 Actions 完成
+    HAS_PLAYWRIGHT = False
+    sync_playwright = None
 
 logger = logging.getLogger("spark")
 
@@ -77,6 +82,8 @@ def open_session(storage_state: Path | str | None = None, headless: bool = True,
 
     退出 with 块时自动关闭全部资源并释放并发名额。
     """
+    if not HAS_PLAYWRIGHT:
+        raise RuntimeError("此环境未安装 playwright(手机/Termux),无法在此发送消息;发送由云端 Actions 完成")
     state_file = str(storage_state) if storage_state and Path(storage_state).exists() else None
     _slots.acquire()
     pw = sync_playwright().start()
