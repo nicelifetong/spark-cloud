@@ -35,14 +35,19 @@ def _parse_hhmm(value: str) -> tuple[int, int]:
     return int(hh), int(mm)
 
 
-def _next_daily(base_time: str, jitter_min: int, now: datetime | None = None) -> datetime:
-    """按「今天 base 时间 + 随机浮动(0..jitter)」计算下一次;已过则顺延到明天。"""
+def _next_daily(base_time: str, jitter_min: int, now: datetime | None = None,
+                force_tomorrow: bool = False) -> datetime:
+    """按「今天 base 时间 + 随机浮动(0..jitter)」计算下一次;已过则顺延到明天。
+
+    force_tomorrow=True:今天这轮已经跑过(触发后重排专用),无条件排到明天,
+    防止 jitter 把已过时间重新推回"今天稍后"导致同日连发。
+    """
     now = now or _now()
     hh, mm = _parse_hhmm(base_time)
     candidate = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
     if jitter_min > 0:
         candidate = candidate + timedelta(minutes=random.uniform(0, jitter_min))
-    if candidate <= now:
+    if force_tomorrow or candidate <= now:
         tomorrow = (now + timedelta(days=1)).replace(hour=hh, minute=mm, second=0, microsecond=0)
         candidate = tomorrow + (timedelta(minutes=random.uniform(0, jitter_min)) if jitter_min > 0 else timedelta(0))
     return candidate
@@ -129,9 +134,11 @@ class Planner(threading.Thread):
                 due_runs = [aid for aid, t in self._runs.items() if t <= now]
                 due_harvests = [aid for aid, t in self._harvests.items() if t <= now]
                 for aid in due_runs:
+                    cfg_run = acc_store.load_config(aid)
                     self._runs[aid] = _next_daily(
-                        acc_store.load_config(aid)["schedule_time"],
-                        acc_store.load_config(aid)["jitter_minutes"],
+                        cfg_run["schedule_time"],
+                        cfg_run["jitter_minutes"],
+                        force_tomorrow=True,  # 今天已触发过,jitter 不得把时间拉回今天
                     )
                 for aid in due_harvests:
                     day = str(acc_store.load_config(aid).get("harvest_day") or "off").lower()
