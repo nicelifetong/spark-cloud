@@ -264,3 +264,16 @@ docker compose up -d --build
 
 想换个仓库名再部署一次:`bash deploy.sh 你要的仓库名`。
 > 提示:扫码那一步,Termux 会启动凭证页并把地址打在屏幕上,用手机浏览器打开它 → 「凭证页」→ 抖音 App 扫码即可。
+
+### 调时间 / 选好友(手机上)
+
+1. Termux 里跑 `python app.py`,浏览器打开它打印的地址(带 token)
+2. 「定时页」里**选好友、设每天发送时间**(改动保存在本地 data/)
+3. 改完回 Termux 跑一条命令,把新配置同步到云端:
+
+   ```bash
+   bash sync.sh
+   ```
+
+云端 Actions 每一拍都拉最新加密包,同步后下一拍(每小时 :13)即生效。
+以后日常调整就是「开 app.py 改 → bash sync.sh」两步。
