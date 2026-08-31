@@ -41,7 +41,7 @@ NAS / 面板机(群晖、1Panel、宝塔、飞牛等)一般自带 Docker,直接�
 
 
 ~~~bash
-git clone <你的仓库地址> spark-cloud
+git clone https://github.com/nicelifetong/spark-cloud.git spark-cloud
 ~~~
 
 ### 第 2 步:一条命令启动
@@ -110,7 +110,7 @@ docker compose up -d --build
 
    ~~~bash
    sudo apt update && sudo apt install -y git
-   git clone https://github.com/你的用户名/仓库名.git /opt/spark-cloud
+   git clone https://github.com/nicelifetong/spark-cloud.git /opt/spark-cloud
    ~~~
 
  
