@@ -65,8 +65,6 @@ def _update(account_id: str, **fields) -> None:
 
 def start(account_id: str) -> dict:
     """发起扫码会话(幂等:已有活跃会话则直接返回)。"""
-    if not HAS_PLAYWRIGHT:
-        raise RuntimeError("此环境未安装 playwright(手机/Termux 无浏览器引擎),无法扫码登录;请在电脑上运行 python app.py 完成扫码")
     with _guard:
         current = _sessions.get(account_id)
         if current and current["status"] in ("preparing", "waiting"):
@@ -273,7 +271,107 @@ def _launch_browser(pw):
     raise last_error or RuntimeError("无法启动任何浏览器")
 
 
+# ---------------- 无 playwright 环境:纯 HTTP 扫码登录(Termux 可用) ----------------
+
+_HTTP_QR_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+_SSO_BASE = "https://sso.douyin.com"
+_SSO_SERVICE = "https%3A%2F%2Fwww.douyin.com"
+
+
+def _worker_http(account_id: str, stop_flag: threading.Event) -> None:
+    """无浏览器引擎时的降级扫码:直接走抖音 SSO HTTP 接口(只需 requests)。"""
+    _slots.acquire()
+    try:
+        _update(account_id, status="preparing", message="正在向抖音请求登录二维码…")
+        headers = {"User-Agent": _HTTP_QR_UA, "Referer": "https://www.douyin.com/"}
+        deadline = time.time() + SESSION_TIMEOUT
+        refreshes = 0
+        token = ""
+        while time.time() < deadline:
+            if stop_flag.is_set():
+                raise _Canceled()
+            if not token:
+                r = requests.get(
+                    f"{_SSO_BASE}/get_qrcode/?service={_SSO_SERVICE}&need_logo=false"
+                    "&need_short_url=false&device_platform=web_app&account_sdk_source=sso&aid=6383",
+                    headers=headers, timeout=15,
+                )
+                data = (r.json() or {}).get("data") or {}
+                token = data.get("token") or ""
+                qrcode = data.get("qrcode") or ""
+                if not token or not qrcode:
+                    raise RuntimeError(f"获取二维码失败: {str(r.json())[:120]}")
+                _update(account_id, status="waiting",
+                        qrcode="data:image/png;base64," + qrcode,
+                        message="请使用抖音 App 扫码登录")
+            r = requests.get(
+                f"{_SSO_BASE}/check_qrcode_connect/?token={token}&service={_SSO_SERVICE}&aid=6383",
+                headers=headers, timeout=15,
+            )
+            data = (r.json() or {}).get("data") or {}
+            st = str(data.get("status") or "")
+            if st == "3":
+                redirect_url = data.get("redirect_url") or ""
+                if not redirect_url:
+                    raise RuntimeError("扫码已确认但未返回登录链接")
+                sess = requests.Session()
+                sess.headers.update(headers)
+                sess.get(redirect_url, timeout=20, allow_redirects=True)
+                if not any(c.name in LOGIN_COOKIES and c.value for c in sess.cookies):
+                    raise RuntimeError("登录链接未携带登录 Cookie,请重试")
+                cookies = [
+                    {"name": c.name, "value": c.value, "domain": c.domain or ".douyin.com",
+                     "path": c.path or "/", "secure": True, "httpOnly": False, "sameSite": "Lax"}
+                    for c in sess.cookies
+                ]
+                _export_state_http(account_id, cookies)
+                _update(account_id, status="done", message="登录成功,登录态已保存", qrcode="")
+                logger.info("[%s] HTTP 扫码登录成功", account_id)
+                return
+            if st == "2":
+                _update(account_id, message="已扫码,请在手机上确认登录")
+            elif st in ("5", "6"):
+                refreshes += 1
+                if refreshes > 3:
+                    raise RuntimeError("二维码过期次数过多,请重新发起")
+                token = ""
+                _update(account_id, message="二维码已过期,正在刷新…", qrcode="")
+            time.sleep(2.5)
+
+        _update(account_id, status="expired", message="扫码超时,请重新发起", qrcode="")
+    except _Canceled:
+        _update(account_id, status="canceled", message="已取消", qrcode="")
+    except Exception as exc:
+        msg = str(exc)[:200]
+        _update(account_id, status="failed", message="扫码会话异常(HTTP 模式)", error=msg, qrcode="")
+        logger.warning("[%s] HTTP 扫码异常: %s", account_id, msg)
+    finally:
+        _stop_flags.pop(account_id, None)
+        threading.Timer(120, lambda: _sessions.pop(account_id, None)).start()
+
+
+def _export_state_http(account_id: str, cookies: list) -> None:
+    import json
+    state = {"cookies": cookies, "origins": []}
+    path: Path = account_dir(account_id) / "state.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_text(path, json.dumps(state, ensure_ascii=False))
+    logger.info("[%s] 登录态已写入 %s", account_id, path)
+    try:
+        from . import runtime as _rt
+
+        _rt.save(account_id, session_status="ok")
+    except Exception:  # 后台未运行时也能静默通过
+        pass
+
+
 def _worker(account_id: str, stop_flag: threading.Event) -> None:
+    if not HAS_PLAYWRIGHT:
+        _worker_http(account_id, stop_flag)
+        return
     pw = None
     browser = None
     xvfb_proc = None
