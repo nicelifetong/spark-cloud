@@ -143,8 +143,9 @@ def pending_targets(account_id: str, only_names: list[str] | None = None) -> lis
     return out
 
 
-def run_once(account_id: str, dry: bool = False, only_names: list[str] | None = None, headed: bool = False) -> dict:
-    """执行一次发送(自动/手动共用)。"""
+def run_once(account_id: str, dry: bool = False, only_names: list[str] | None = None, headed: bool = False,
+             auto: bool = False) -> dict:
+    """执行一次发送(auto=True 表示自动调度触发,当日已发则跳过;手动触发放行)。"""
     if not _lock_for(account_id).acquire(blocking=False):
         return {"ok": False, "reason": "该账号已有任务在运行"}
     with _guard:
@@ -155,6 +156,17 @@ def run_once(account_id: str, dry: bool = False, only_names: list[str] | None = 
         rt.set_running(account_id, True)
         try:
             cfg = acc_store.load_config(account_id)
+            # 自动调度当日门禁:台账里任一好友 last_sent 是今天 → 整轮跳过(手动触发放行)
+            if auto and not dry and not only_names:
+                from . import ledger as _ledger
+                from datetime import datetime as _dt
+                _today = _dt.now().astimezone().strftime("%Y-%m-%d")
+                if any(str(e.get("last_sent") or "").startswith(_today) for e in _ledger.load(account_id)):
+                    logger.info("[%s] 今日已发送,自动调度跳过", account_id)
+                    result = {"at": _now(), "dry_run": False, "ok": [], "failed": [], "skipped": [],
+                              "note": "今日已发送,自动调度跳过"}
+                    rt.record_run(account_id, result)
+                    return {"started": True, **result}
             targets = pending_targets(account_id, only_names)
             if not targets:
                 logger.info("[%s] 没有待发送目标,跳过", account_id)

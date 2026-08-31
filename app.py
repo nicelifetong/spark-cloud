@@ -155,7 +155,7 @@ def bootstrap() -> None:
         logger.info("网页访问令牌已就绪(通过 X-Token 请求头携带)")
 
     planner.attach(
-        on_run=lambda account_id: runner.run_once(account_id, dry=False),
+        on_run=lambda account_id: runner.run_once(account_id, dry=False, auto=True),
         on_harvest=lambda account_id: runner.run_scan(account_id),
     )
     planner.apply_all()
