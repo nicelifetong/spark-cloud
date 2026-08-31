@@ -299,11 +299,17 @@ def _worker_http(account_id: str, stop_flag: threading.Event) -> None:
                     "&need_short_url=false&device_platform=web_app&account_sdk_source=sso&aid=6383",
                     headers=headers, timeout=15,
                 )
-                data = (r.json() or {}).get("data") or {}
+                try:
+                    data = (r.json() or {}).get("data") or {}
+                except ValueError:
+                    raise RuntimeError(
+                        "抖音 SSO 接口对此网络环境启用了风控,手机直连拿不到二维码;"
+                        "请用电脑后台扫码,或在本仓库 Actions 跑 cloud-login(云端扫码)"
+                    )
                 token = data.get("token") or ""
                 qrcode = data.get("qrcode") or ""
                 if not token or not qrcode:
-                    raise RuntimeError(f"获取二维码失败: {str(r.json())[:120]}")
+                    raise RuntimeError(f"获取二维码失败: {str(data)[:120]}")
                 _update(account_id, status="waiting",
                         qrcode="data:image/png;base64," + qrcode,
                         message="请使用抖音 App 扫码登录")
