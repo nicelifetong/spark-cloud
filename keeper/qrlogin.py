@@ -21,7 +21,12 @@ import time
 from pathlib import Path
 
 import requests
-from playwright.sync_api import sync_playwright
+try:
+    from playwright.sync_api import sync_playwright
+    HAS_PLAYWRIGHT = True
+except ImportError:  # Termux/手机等无浏览器引擎环境:后台可启动,仅扫码登录不可用
+    HAS_PLAYWRIGHT = False
+    sync_playwright = None
 
 from .browser import _slots  # 复用全局并发名额
 from .settings import account_dir
@@ -60,6 +65,8 @@ def _update(account_id: str, **fields) -> None:
 
 def start(account_id: str) -> dict:
     """发起扫码会话(幂等:已有活跃会话则直接返回)。"""
+    if not HAS_PLAYWRIGHT:
+        raise RuntimeError("此环境未安装 playwright(手机/Termux 无浏览器引擎),无法扫码登录;请在电脑上运行 python app.py 完成扫码")
     with _guard:
         current = _sessions.get(account_id)
         if current and current["status"] in ("preparing", "waiting"):

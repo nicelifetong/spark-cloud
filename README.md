@@ -258,9 +258,10 @@ docker compose up -d --build
    ```bash
    pkg update -y && pkg install -y git python
    git clone https://github.com/nicelifetong/spark-cloud.git
-   cd spark-cloud && pip install -r requirements.txt && python app.py
+   cd spark-cloud && pip install flask requests && python app.py
    ```
-   浏览器打开屏幕上的地址 → 扫码登录 → 定时页选好友/设时间 → 设置→通知设置绑定企业微信
+   浏览器打开屏幕上的地址 → 定时页选好友/设时间 → 设置→通知设置绑定企业微信
+   (扫码登录需要电脑——playwright 无安卓版;在电脑上跑过 `python app.py` 扫码后,以后手机上就能正常管理)
 3. **后台里全部配置好**后,按 Ctrl+C 退出,再输一条命令上传 GitHub:
    ```bash
    bash deploy.sh
