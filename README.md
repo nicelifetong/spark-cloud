@@ -7,12 +7,12 @@
 
 ## 📋 目录(先看这个,再选一条路)
 
-| 路线 | | 适合谁 |
+| 路线 | 适合谁 |
 |---|---|
-| ⭐ **A. Docker Compose** | 有 Linux 服务器 / NAS / 面板机 | 
-| ⭐ **B. Windows 本地运行**  | Windows 用户首选 | 
-| **C. Linux 云服务器**  | 7x24 小时稳定运行 |
-| **D. GitHub Actions 免费云端**  | 白嫖党 | 
+| ⭐ **A. Docker Compose** | 有 Linux 服务器 / NAS / 面板机 |
+| ⭐ **B. Windows 本地运行** | Windows 用户首选 |
+| **C. Linux 云服务器** | 7x24 小时稳定运行 |
+| **D. GitHub Actions 免费云端** | 白嫖党 |
 
 
 ---
