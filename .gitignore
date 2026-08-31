@@ -4,6 +4,7 @@ data/
 *.log
 .seal_key
 .seal_repo.txt
+state.json
 
 # 运行环境
 .venv/
