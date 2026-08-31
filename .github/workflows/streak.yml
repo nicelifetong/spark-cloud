@@ -1,5 +1,5 @@
 # 无服务器部署:续火本体跑在 GitHub Actions 上
-# 每 30 分钟一拍(国外 runner 的 cron 有 5~20 分钟随机延迟,属正常):
+# 每小时第 13 分钟一拍(国外 runner 的 cron 有 5~20 分钟随机延迟,属正常;
 #   解密 vault -> 到点账号各跑一轮(同日每账号只执行一次) -> 回写加密并提交
 #
 # 开通步骤(一次性):
@@ -16,7 +16,8 @@ name: streak
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    # 每小时第 13 分钟一拍:刻意避开整点/半点高峰(全 GitHub 最挤,排队延迟甚至丢拍最严重)
+    - cron: "13 * * * *"
   workflow_dispatch:
 
 concurrency:
@@ -39,6 +40,12 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+
+      - name: 缓存 Chromium(控制 Actions 免费额度)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}
 
       - name: 安装依赖 + Chromium
         run: |
