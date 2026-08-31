@@ -359,6 +359,41 @@ def _worker_http(account_id: str, stop_flag: threading.Event) -> None:
         threading.Timer(120, lambda: _sessions.pop(account_id, None)).start()
 
 
+def import_cookies(account_id: str, raw: str) -> str:
+    """把用户在手机浏览器里复制的 Cookie 串直接写成本地登录态(无需浏览器/扫码)。
+
+    raw 形如 "ttwid=xxx; sessionid=yyy; ..." 也兼容换行分隔。
+    """
+    import json
+    from . import runtime as _rt
+
+    pairs = []
+    for chunk in (raw or "").replace("\n", ";").split(";"):
+        chunk = chunk.strip()
+        if not chunk or "=" not in chunk:
+            continue
+        k, _, v = chunk.partition("=")
+        k, v = k.strip(), v.strip()
+        if k:
+            pairs.append((k, v))
+    names = {k.lower() for k, _ in pairs}
+    if not names:
+        raise ValueError("没有解析到任何 Cookie 内容")
+    if not any(n in names for n in ("sessionid", "sessionid_ss")):
+        raise ValueError("Cookie 里没有 sessionid —— 浏览器里可能还没登录抖音,请先登录再复制")
+    cookies = [{
+        "name": k, "value": v, "domain": ".douyin.com", "path": "/",
+        "secure": True, "httpOnly": False, "sameSite": "Lax",
+    } for k, v in pairs]
+    write_text(account_dir(account_id) / "state.json",
+               json.dumps({"cookies": cookies, "origins": []}, ensure_ascii=False))
+    try:
+        _rt.save(account_id, session_status="ok")
+    except Exception:
+        pass
+    return f"已写入 {len(cookies)} 条 Cookie,登录态生效"
+
+
 def _export_state_http(account_id: str, cookies: list) -> None:
     import json
     state = {"cookies": cookies, "origins": []}

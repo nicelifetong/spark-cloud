@@ -951,6 +951,26 @@ async function poll(){
  }catch(e){st.textContent="网络异常,重试中…";}
 }
 poll();
+</script>
+<div style="margin:18px auto 0;max-width:440px;font-family:system-ui;text-align:left">
+ <details><summary style="cursor:pointer;color:#666;font-size:14px">扫不了码?粘贴 Cookie 登录(手机浏览器方案)</summary>
+  <p style="font-size:13px;color:#888;line-height:1.6">1. 用 Via/夸克等浏览器开 <b>www.douyin.com</b>(菜单里切「桌面版 UA」)并登录;<br>2. 在地址栏打开书签:<code style="font-size:11px">javascript:prompt('cookie',document.cookie)</code>(先添加为书签),全选复制;<br>3. 粘贴到这里点提交:</p>
+  <textarea id="ck" placeholder="ttwid=xxx; sessionid=yyy; ..." style="width:100%;height:90px;font-size:12px;box-sizing:border-box"></textarea><br>
+  <button onclick="ckgo()" style="margin-top:6px;padding:8px 18px">提交 Cookie 登录</button>
+  <div id="ckst" style="margin-top:6px;font-size:13px;color:#666"></div>
+ </details>
+</div>
+<script>
+async function ckgo(){
+ const s=document.getElementById('ckst');
+ s.textContent='提交中…';
+ try{
+  const r=await fetch('/cookiepub/__AID__?t=__T__',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({raw:document.getElementById('ck').value})});
+  const d=await r.json();
+  if(r.ok&&d.ok){s.style.color='#0a0';s.textContent='✅ '+d.detail+' 可关闭本页';}
+  else{s.style.color='#c00';s.textContent='❌ '+(d.detail||'提交失败');}
+ }catch(e){s.textContent='网络异常,请重试';}
+}
 </script></body></html>"""
 
 
@@ -980,6 +1000,23 @@ def qrpub_page(account_id: str):
                         mimetype="text/plain; charset=utf-8"), 403
     html = _QRPUB_HTML.replace("__AID__", account_id).replace("__T__", tok)
     return Response(html, mimetype="text/html; charset=utf-8")
+
+
+@api.post("/cookiepub/<account_id>")
+def cookiepub_submit(account_id: str):
+    """粘贴 Cookie 登录:与 qrpub 同一令牌保护,把手机浏览器复制的 cookie 写成登录态。"""
+    import re as _re
+    if not _re.fullmatch(r"[\w.-]{1,64}", account_id or ""):
+        return jsonify({"detail": "账号不存在"}), 404
+    tok = qrlogin.qr_token(account_id)
+    if not tok or request.args.get("t", "") != tok:
+        return jsonify({"detail": "链接已失效,请重新打开凭证页"}), 403
+    raw = str((request.get_json(silent=True) or {}).get("raw") or "")
+    try:
+        detail = qrlogin.import_cookies(account_id, raw)
+    except ValueError as exc:
+        return jsonify({"ok": False, "detail": str(exc)}), 400
+    return jsonify({"ok": True, "detail": detail})
 
 
 # ---------------- 日志 ----------------
