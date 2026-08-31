@@ -277,3 +277,11 @@ docker compose up -d --build
 
 云端 Actions 每一拍都拉最新加密包,同步后下一拍(每小时 :13)即生效。
 以后日常调整就是「开 app.py 改 → bash sync.sh」两步。
+
+### 绑定企业微信推送(可选:收"发送成功/失败"提醒)
+
+1. 企业微信 App 里建一个群(或用现有群)→ 群设置 → **群机器人** → **添加机器人** → 复制 Webhook 地址(`https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx`)
+2. 管理网页 → **设置 → 通知设置** → 渠道选 **企业微信(wecom)** → 粘贴 Webhook 地址 → 勾选想收的事件(发送成功/失败/登录失效)→ 保存
+3. 手机部署的用户改完要 `bash sync.sh` 同步云端;电脑本地即时生效
+
+> Webhook 地址就是往你群里发消息的钥匙:它只存在加密包里、不会进 git,也不要发给陌生人。
