@@ -260,7 +260,7 @@ docker compose up -d --build
    git clone https://github.com/nicelifetong/spark-cloud.git
    cd spark-cloud && bash deploy.sh
    ```
-3. 按屏幕提示走:浏览器授权 GitHub → 自动建**私有仓库**并推代码 → 凭证页扫码登录抖音 → 自动加密打包 → 自动写入 Secret → ✅ 完成
+3. 按屏幕提示走:**先扫码登录,并在后台里把好友/时间/推送全部配好** → 配完按回车,脚本自动建**私有仓库**、加密封包、上传 GitHub、写入 Secret → ✅ 完成
 
 想换个仓库名再部署一次:`bash deploy.sh 你要的仓库名`。
 > 提示:扫码那一步,Termux 会启动凭证页并把地址打在屏幕上,用手机浏览器打开它 → 「凭证页」→ 抖音 App 扫码即可。
