@@ -280,8 +280,12 @@ docker compose up -d --build
 
 ### 绑定企业微信推送(可选:收"发送成功/失败"提醒)
 
-1. 企业微信 App 里建一个群(或用现有群)→ 群设置 → **群机器人** → **添加机器人** → 复制 Webhook 地址(`https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx`)
-2. 管理网页 → **设置 → 通知设置** → 渠道选 **企业微信(wecom)** → 粘贴 Webhook 地址 → 勾选想收的事件(发送成功/失败/登录失效)→ 保存
-3. 手机部署的用户改完要 `bash sync.sh` 同步云端;电脑本地即时生效
+顺序和「调时间 / 选好友」一样:**先开管理后台 → 后台里配置好 → 最后一条命令上传**。
 
+1. 企业微信 App 里建一个群(或用现有群)→ 群设置 → **群机器人** → **添加机器人** → 复制 Webhook 地址(`https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx`)
+2. Termux 里启动管理后台:`python app.py`,浏览器打开它打印的地址(带 token)
+3. 后台 → **设置 → 通知设置** → 渠道选 **企业微信(wecom)** → 粘贴 Webhook 地址 → 勾选想收的事件 → 保存
+4. 好友、时间、通知**全部配置完**后,Ctrl+C 停掉后台,回 Termux 跑 `bash sync.sh` 上传 GitHub → ✅ 云端下一拍生效
+
+> 电脑本地(路线 B)没有第 4 步——配置保存即生效,后台本来就在跑。
 > Webhook 地址就是往你群里发消息的钥匙:它只存在加密包里、不会进 git,也不要发给陌生人。
