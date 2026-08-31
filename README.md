@@ -13,6 +13,7 @@
 | ⭐ **B. Windows 本地运行** | Windows 用户首选 |
 | **C. Linux 云服务器** | 7x24 小时稳定运行 |
 | **D. GitHub Actions 免费云端** | 白嫖党 |
+| **E. 安卓手机 Termux** | 只有手机,想全程手机搞定 |
 
 
 ---
@@ -246,3 +247,20 @@ docker compose up -d --build
 ## ⚠️ 免责声明
 
 本项目仅用于**个人学习与亲友互动**,请勿批量骚扰、商业营销。抖音对异常行为风控严格,一切后果由使用者自行承担。
+---
+
+## 📱 路线 E:安卓手机一键部署(Termux)
+
+全程只用一部手机:装 Termux → 复制 3 条命令 → 扫码 → 完事。之后 GitHub Actions 云端自动跑,手机都不用开机。
+
+1. 安装 **Termux**:从 [F-Droid](https://f-droid.org/packages/com.termux/) 或其 GitHub Releases 下载(应用商店的旧版别用)
+2. 打开 Termux,原样粘贴运行:
+   ```bash
+   pkg update -y && pkg install -y git
+   git clone https://github.com/nicelifetong/spark-cloud.git
+   cd spark-cloud && bash deploy.sh
+   ```
+3. 按屏幕提示走:浏览器授权 GitHub → 自动建**私有仓库**并推代码 → 凭证页扫码登录抖音 → 自动加密打包 → 自动写入 Secret → ✅ 完成
+
+想换个仓库名再部署一次:`bash deploy.sh 你要的仓库名`。
+> 提示:扫码那一步,Termux 会启动凭证页并把地址打在屏幕上,用手机浏览器打开它 → 「凭证页」→ 抖音 App 扫码即可。
