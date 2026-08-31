@@ -1,0 +1,42 @@
+name: cloud-login(云端扫码登录)
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: cloud-login
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 安装依赖 + 浏览器
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+      - name: 还原现有配置(如有)
+        env:
+          DATA_KEY: ${{ secrets.DATA_KEY }}
+        run: |
+          if [ -f vault/data.enc ] && [ -n "$DATA_KEY" ]; then
+            python scripts/gh_run.py unseal || echo "[i] unseal 跳过(将只保存登录态)"
+          fi
+      - name: 启动云端扫码(二维码推企业微信)
+        env:
+          DATA_KEY: ${{ secrets.DATA_KEY }}
+        run: python scripts/cloud_login.py
+      - name: 加密并回传登录态
+        env:
+          DATA_KEY: ${{ secrets.DATA_KEY }}
+        run: |
+          git config user.name "spark-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python scripts/gh_run.py seal
+          git add vault/data.enc
+          git commit -m "chore: 云端扫码登录态" || echo "nothing to commit"
+          git pull --rebase origin main || true
+          git push
