@@ -279,6 +279,8 @@ docker compose up -d --build
 
 **更简单的:粘贴 Cookie(推荐)**:凭证页展开「扫不了码?粘贴 Cookie 登录」→ 用 Via/夸克等浏览器开 `www.douyin.com`(菜单切桌面版 UA)登录 → 按页面提示复制 Cookie → 粘贴提交即完成登录,不用扫码、不用云端。
 
+> 同步联系人同样在云端做:仓库 **Actions → sync-contacts(云端同步联系人) → Run workflow**,跑完后在 Termux `git pull` 并用 `.seal_key` 的密钥 `DATA_KEY=<密钥> python scripts/gh_run.py unseal` 解回本地,后台好友列表就有了(后台「同步联系人」按钮仅在电脑端可用)。
+
 ### 调时间 / 选好友(手机上)
 
 1. Termux 里跑 `python app.py`,浏览器打开它打印的地址(带 token)

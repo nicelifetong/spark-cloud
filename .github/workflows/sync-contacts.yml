@@ -1,0 +1,42 @@
+name: sync-contacts(云端同步联系人)
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: sync-contacts
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 安装依赖 + 浏览器
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+      - name: 还原现有配置
+        env:
+          DATA_KEY: ${{ secrets.DATA_KEY }}
+        run: |
+          if [ -f vault/data.enc ] && [ -n "$DATA_KEY" ]; then
+            python scripts/gh_run.py unseal || echo "[i] unseal 跳过"
+          fi
+      - name: 云端同步联系人
+        env:
+          DATA_KEY: ${{ secrets.DATA_KEY }}
+        run: python cli.py sync
+      - name: 加密并回传
+        env:
+          DATA_KEY: ${{ secrets.DATA_KEY }}
+        run: |
+          git config user.name "spark-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python scripts/gh_run.py seal
+          git add vault/data.enc
+          git commit -m "chore: 云端同步联系人" || echo "nothing to commit"
+          git pull --rebase origin main || true
+          git push
