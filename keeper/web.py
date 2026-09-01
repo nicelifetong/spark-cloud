@@ -852,6 +852,24 @@ def credential_upload(account_id: str):
     return {"ok": True, "size": len(raw)}
 
 
+@api.post("/accounts/<account_id>/credential/cookies")
+def credential_cookies(account_id: str):
+    """凭证页直接粘贴浏览器复制的 Cookie 串生成登录态(手机无电脑方案)。"""
+    denied = _require_auth()
+    if denied:
+        return denied
+    aid, err = _resolve(account_id)
+    if err:
+        return err
+    raw = str((request.get_json(silent=True) or {}).get("raw") or "")
+    try:
+        detail = qrlogin.import_cookies(aid, raw)
+    except ValueError as exc:
+        return jsonify({"detail": str(exc)}), 400
+    logger.info("[%s] 已通过网页粘贴 Cookie 更新登录态", aid)
+    return {"ok": True, "detail": detail}
+
+
 @api.delete("/accounts/<account_id>/credential")
 def credential_delete(account_id: str):
     denied = _require_auth()

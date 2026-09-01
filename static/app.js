@@ -1274,6 +1274,17 @@ function renderCredentials() {
       '如遇二次安全验证(刷脸),页面会出现新二维码,按提示用手机扫描即可。</div>' +
       '<button class="btn btn-primary" id="qrStart">' + ICONS.qr + '开始扫码登录</button></div>';
     grid.appendChild(qr);
+
+    var ck = el('div', 'glass');
+    ck.style.cssText = 'padding:22px;grid-column:1/-1';
+    ck.innerHTML =
+      '<div class="section-head"><h3>粘贴 Cookie 登录(手机浏览器方案)</h3></div>' +
+      '<div style="font-size:13px;color:var(--text-2);line-height:1.8;margin-bottom:10px">' +
+      '用 Via/夸克等手机浏览器开 <span class="mono">www.douyin.com</span>(菜单切「桌面版 UA」)并登录;' +
+      '再把书签 <span class="mono">javascript:prompt(\'c\',document.cookie)</span>(先添加为书签)在地址栏打开,全选复制,粘贴到下面:</div>' +
+      '<textarea id="ckRaw" placeholder="ttwid=xxx; sessionid=yyy; ..." style="width:100%;height:90px;font-size:12px;box-sizing:border-box;background:rgba(127,127,127,.08);color:var(--text);border:1px solid rgba(127,127,127,.25);border-radius:10px;padding:10px"></textarea>' +
+      '<div style="margin-top:8px"><button class="btn btn-primary" id="ckGo">提交 Cookie 登录</button> <span id="ckSt" style="font-size:13px;color:var(--text-3)"></span></div>';
+    grid.appendChild(ck);
     page.appendChild(grid);
 
     $('#dropZone').onclick = function () { $('#stateFile').click(); };
@@ -1290,6 +1301,19 @@ function renderCredentials() {
       if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
     });
     $('#qrStart').onclick = startLogin;
+    $('#ckGo').onclick = function () {
+      var raw = $('#ckRaw').value.trim();
+      if (!raw) { toast('请先粘贴 Cookie', 'err'); return; }
+      $('#ckSt').textContent = '提交中…';
+      post(accPath('/credential/cookies'), { raw: raw }).then(function (r) {
+        $('#ckSt').textContent = '';
+        toast(r.detail || 'Cookie 已写入,登录态生效', 'ok');
+        renderCredentials();
+      }).catch(function (e) {
+        $('#ckSt').textContent = '';
+        toast(e.message, 'err');
+      });
+    };
     var cd = $('#credDelete');
     if (cd) cd.onclick = function () {
       confirmDlg('删除登录态', '将删除该账号的 <span class="mono">state.json</span>。删除后:<br/>· 下次运行会失败,并触发<b style="color:var(--err)">登录态失效微信推送</b>;<br/>· 需重新上传文件或扫码登录。确定删除?', function () {
