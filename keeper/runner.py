@@ -89,6 +89,48 @@ def reset(account_id: str) -> None:
 
 # ---------------- 同步联系人 ----------------
 
+def _sync_via_node(account_id: str) -> dict:
+    """Termux 本地回退:用 Node + playwright-core + 系统 chromium 同步联系人。
+
+    手机装不了 Python playwright,但能装 nodejs + chromium(x11-repo),
+    scripts/sync_friends.js 用它们复刻 sync_friends_page 的抓取逻辑。
+    """
+    import json
+    import shutil
+    import subprocess
+    from pathlib import Path
+
+    node = shutil.which("node")
+    script = Path(__file__).resolve().parents[1] / "scripts" / "sync_friends.js"
+    if not node or not script.exists():
+        return {"names": [], "error": (
+            "此环境无 playwright 且 Node 本地同步不可用;安装:"
+            "pkg install nodejs-lts x11-repo -y && pkg install chromium -y"
+            " && npm install playwright-core(见 README 路线 E)")}
+    state = account_dir(account_id) / "state.json"
+    if not state.exists():
+        return {"names": [], "error": "该账号尚未上传登录态 state.json"}
+    try:
+        proc = subprocess.run(
+            [node, str(script), "--state", str(state), "--max-rounds", "20"],
+            capture_output=True, text=True, timeout=420,
+        )
+        data = {}
+        for line in reversed(proc.stdout.splitlines()):
+            if line.startswith("RESULT:"):
+                data = json.loads(line[len("RESULT:"):])
+                break
+        names = data.get("names") or []
+        if not names and not data.get("error"):
+            tail = (proc.stderr or "").strip().splitlines()
+            data = {"names": [], "error": tail[-1] if tail else "Node 本地同步失败"}
+        return {"names": names, "error": data.get("error")}
+    except subprocess.TimeoutExpired:
+        return {"names": [], "error": "Node 本地同步超时(7 分钟)"}
+    except Exception as exc:  # noqa: BLE001
+        return {"names": [], "error": f"Node 本地同步异常: {exc}"}
+
+
 def sync_contacts(account_id: str) -> dict:
     """后台线程:打开私信页拉取联系人 → 合并进台账。"""
     if not _lock_for(account_id).acquire(blocking=False):
@@ -98,7 +140,11 @@ def sync_contacts(account_id: str) -> dict:
     try:
         rt.set_running(account_id, True)
         try:
-            data = douyin.sync_friends_page(account_id)
+            from .browser import HAS_PLAYWRIGHT
+            if HAS_PLAYWRIGHT:
+                data = douyin.sync_friends_page(account_id)
+            else:
+                data = _sync_via_node(account_id)
             error = data.get("error")
             if error:
                 rt.record_sync(account_id, 0, error)
